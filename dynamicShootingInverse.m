@@ -1,26 +1,28 @@
+% Version that is to be used for debugging - Now the main version
+close all
 %% Script part
 %User Inputs
-dt = 0.02; %Timestep size
-tmax = 20; %Simulation time
-Ns = 28; %Number of spatial steps
-doPlot = "plot"; %Set equal to "plot" if dynamic plot is wanted, anything else if not
-SpatialMethod = "RK4"; %Choose spatial solving scheme: "RK4" or "Euler"
-TimeMethod = "BDF1"; %Choose time stepping scheme: "BDF1", "BDF2", "BDFalpha"
-alpha = -0.4; %Set alpha for BDFalpha scheme
+dt = 0.02;              % Timestep size
+tmax = 10;              % Simulation time
+Ns = 28;                % Number of spatial steps
+doPlot = "plot";        % Set equal to "plot" if dynamic plot is wanted, anything else if not
+SpatialMethod = "RK4";  % Choose spatial solving scheme: "RK4" or "Euler"
+TimeMethod = "BDF1";    % Choose time stepping scheme: "BDF1", "BDF2", "BDFalpha"
+alpha = -0.4;           % Set alpha for BDFalpha scheme
 %Choose "Straight" or "Static" initial configuration. "Static" uses the
 %tension at the first timestep to staticShooting for initial robot position
 InterpolateMethod = "Hermite"; %Choose interpolation method: "Linear", "Hermite"
 
-t = 0:dt:tmax;
-Nt = length(t);
-P_t = zeros(2,Nt);
+% t = 0:dt:tmax;
+% Nt = length(t);
+% P_t = zeros(2,Nt);
 
 %Demand positions
-P_t(2,1:Nt/2) = linspace(-0.043948,0.0503,Nt/2);
-P_t(2,Nt/2:end) = linspace(0.0503,-0.043948,Nt/2+1);
-
-P_t(1,1:Nt/2) = linspace(0,0.0987,Nt/2);
-P_t(1,Nt/2:end) = linspace(0.0987,0,Nt/2+1);
+% P_t(2,1:Nt/2) = linspace(-0.043948,0.0503,Nt/2);
+% P_t(2,Nt/2:end) = linspace(0.0503,-0.043948,Nt/2+1);
+% 
+% P_t(1,1:Nt/2) = linspace(0,0.0987,Nt/2);
+% P_t(1,Nt/2:end) = linspace(0.0987,0,Nt/2+1);
 %P_t(2,:) = 0.05*(sin(pi()*t+pi()*3/2)+1) %Uncomment for sinusoidal input
 %in y
 
@@ -55,28 +57,29 @@ function [solution,T_t] = dynamicShootingInverseExact(P_t,Ns, dt, t,doPlot, Spat
 
     t_steps = length(t);
     options = optimset('Display','off','Algorithm','levenberg-marquardt'); %Turns off fsolves display
+    
     %Set Constants
-    L = 0.24; %Backbone Length (m)
-    Area = 5.02655e-6; %Backbone Cross Sectional Area (m^2)
-    TotalMass = 9e-3; %Total Continuum Robot Arm Mass (kg)
-    E = 168e9; %Modulus of Elasticity of Backbone (MPa)
-    Gs = 0.29*E; %Shear Modulus of Backbone (MPa)
-    g = -9.81; %Acceleration due to Gravity (m/s^2)
-    u_star = [0;0;0]; %Undeformed backbone linear speed configuration
-    v_star = [0;0;1]; %Undeformed backbone angular speed configuration
-    fe = [0;0;TotalMass/L*g]; %Set Distributed Load on Backbone (Weight)
+    L = 0.09;                 % Backbone Length (m)
+    Area = 1.32e-7;        % Backbone Cross Sectional Area (m^2)
+    TotalMass = 6.7e-3;         % Total Continuum Robot Arm Mass (kg)
+    E = 75e9;                % Modulus of Elasticity of Backbone (MPa) - Have currently put in Pa value
+    Gs = 28.8e9;              % Shear Modulus of Backbone (MPa) - Pa
+    g = -9.81;                % Acceleration due to Gravity (m/s^2)
+    u_star = [0;0;0];         % Undeformed backbone linear speed configuration
+    v_star = [0;0;1];         % Undeformed backbone angular speed configuration
+    fe = [0;0;TotalMass/L*g]; % Set Distributed Load on Backbone (Weight)
 
     %%% changing TotalMass/L*g to rho*Area*g give cantilever rod solution
 
     le = [0;0;0]; %Set Distributed Moment on Backbone
-    Ixx = 2.0106e-14; %Second moment of area
+    Ixx = 1.39e-15; %Second moment of area 2.0106e-14
     Iyy = Ixx;
-    Izz = 4.0212e-14; %Polar moment of inertia
+    Izz = 2.77e-15; %Polar moment of inertia 4.0212e-14
     Kse = diag([Gs*Area,Gs*Area,E*Area]); %Stiffness matrix shear and extension
     Kbt = diag([E*Ixx,E*Iyy,Gs*Izz]); %Stiffness matrix= bending and torsion
     ri = [0 8e-3 0; -8e-3 0 0; 0 -8e-3 0; 8e-3 0 0];
     ri = ri.';
-    rho = 7860; %Density
+    rho = 6450; %Density
     J = diag([Ixx,Iyy,Izz]);
     Bse = zeros(3); %Strain and extension damping
     Bbt = zeros(3); %Bending and torsional damping
@@ -89,6 +92,7 @@ function [solution,T_t] = dynamicShootingInverseExact(P_t,Ns, dt, t,doPlot, Spat
     h0 = [0.8256;0;0.8256;0];
     q0 = [0;0;0];
     w0 = [0;0;0];
+%     h0 = [0;0;0;0];
 
     %Initialises first step as straight, or from given static position
 
